@@ -2,7 +2,6 @@ import re
 import numpy as np
 import pandas as pd
 import scipy
-import matplotlib.pyplot as plt
 from matplotlib.ticker import ScalarFormatter
 import scipy.optimize
 
@@ -41,11 +40,13 @@ def xclip(xy: pd.DataFrame, range: tuple) -> pd.DataFrame:
     - range : Tuple object as (begin, end).
     """
     x = xy.x.to_numpy()
-    y = xy.y.to_numpy()
+    #y = xy.y.to_numpy()
     i_x_min = np.where(x >= range[0])[0][0]
     i_x_max = np.where(x >= range[1])[0][0]
-    _xy = np.array([x[i_x_min:i_x_max + 1], y[i_x_min:i_x_max + 1]]).T
-    return pd.DataFrame(_xy, columns=["x", "y"])
+    #_xy = np.array([x[i_x_min:i_x_max + 1], y[i_x_min:i_x_max + 1]]).T
+    _xy = xy.loc[i_x_min:i_x_max]
+    #return pd.DataFrame(_xy, columns=["x", "y"])
+    return _xy
 
 def normalize(xy):
     y = xy[1]
@@ -221,7 +222,12 @@ def series_area(xy: pd.DataFrame) -> pd.Series:
         area_list.append(a)
     return pd.Series(area_list)
 
-def least_squares(xy: pd.DataFrame, model, fitparam: dict, residual=mdl.residual) -> scipy.optimize.OptimizeResult:
+def least_squares(
+    xy          : pd.DataFrame | None, 
+    model       : callable, 
+    fitparam    : dict, 
+    residual    = mdl.residual,
+) -> scipy.optimize.OptimizeResult:
     """
     ## Wrapper of scipy.optimize.least_squares() via pd.Dataframe.
     - xy       : DataFrame including "x" and "y" columns.
@@ -248,7 +254,17 @@ def least_squares(xy: pd.DataFrame, model, fitparam: dict, residual=mdl.residual
 
     return result
 
-def leastsq(xy: pd.DataFrame, model: callable, fitparam: pd.DataFrame, residual=mdl.residual) -> scipy.optimize.OptimizeResult:
+def leastsq(
+    xy          : pd.DataFrame  | None, 
+    model       : callable, 
+    fitparam    : pd.DataFrame, 
+    residual                           = mdl.residual,
+    x           : pd.Series     | None = None,
+    y           : pd.Series     | None = None,
+) -> scipy.optimize.OptimizeResult:
+    if x is not None and y is not None:
+        xy = pd.DataFrame({"x": x, "y": y})
+
     return least_squares(
         xy       = xy, 
         model    = model, 

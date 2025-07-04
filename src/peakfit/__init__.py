@@ -10,3 +10,7 @@ import pybeads
 from .spectrum import (
     Spectrum
 )
+
+from .xyseries import (
+    xySeries
+)
