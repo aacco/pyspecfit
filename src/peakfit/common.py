@@ -33,20 +33,18 @@ def xlim(xy, xlim_range: tuple):  # should be a class?
     _xy = np.array([xy[0][i_x_min:i_x_max + 1], xy[1][i_x_min:i_x_max + 1]])
     return _xy
 
-def xclip(xy: pd.DataFrame, range: tuple) -> pd.DataFrame:
+def xclip(xy: any, range: tuple) -> pd.DataFrame:
     """
     Roughly clipping xy data by x-axis range.
-    - xy    : pd.Dataframe including "x" and "y" columns.
+    - xy    : pd.Dataframe like including "x" and "y" columns.
     - range : Tuple object as (begin, end).
     """
     x = xy.x.to_numpy()
-    #y = xy.y.to_numpy()
     i_x_min = np.where(x >= range[0])[0][0]
     i_x_max = np.where(x >= range[1])[0][0]
-    #_xy = np.array([x[i_x_min:i_x_max + 1], y[i_x_min:i_x_max + 1]]).T
-    _xy = xy.loc[i_x_min:i_x_max]
-    #return pd.DataFrame(_xy, columns=["x", "y"])
-    return _xy
+    _xy_rtn = xy.loc[i_x_min:i_x_max]
+    xy_rtn = _xy_rtn.reset_index(drop=True)
+    return xy_rtn
 
 def normalize(xy):
     y = xy[1]
@@ -163,8 +161,8 @@ def build_df_elements(x, df_resultparams: pd.DataFrame, chunk_num: int, model=md
     return df_eles
 
 def build_peak_elements(x, fitresult: scipy.optimize.OptimizeResult, fitparam: pd.DataFrame) -> pd.DataFrame:
-    peakname_list = fitparam["peak_name"]
-    peaktype_list = fitparam["peak_type"]
+    peakname_list = fitparam["peak_name"].to_list()
+    peaktype_list = fitparam["peak_type"].to_list()
     chunk_length_list = convert_peak_type_to_chunk_length(peaktype_list)
     # Separating args by each peak type (singlet or doublet).
     params = separate_chunk(fitresult.x, chunk_length_list)
@@ -251,6 +249,7 @@ def least_squares(
     if not result.success:
         print("ERROR")
         print(result)
+        raise
 
     return result
 

@@ -90,8 +90,19 @@ class xySeries:
         self.xy_all[self.ID_X] = ser
         return
 
+    def xshift(self, shift: float):
+        self.xy_all[self.ID_X] = self.xy_all[self.ID_X].add(shift)
+        return
+
     @property
     def y_raw(self):
+        return self.xy_all[self.ID_Y_RAW]
+
+    @property
+    def y(self):
+        """
+        Shortcut for `y_raw`.
+        """
         return self.xy_all[self.ID_Y_RAW]
 
     def update_y_raw(self, ser: pd.Series):
@@ -140,3 +151,10 @@ class xySeries:
     def columns_elements(self):
         ele_list = [c for c in self.columns if not c in self.FUNDAMENTAL_COLS]
         return ele_list
+    
+
+    def to_df(self):
+        return self.xy_all
+    
+    def has_bg(self):
+        return self.ID_Y_BG in self.columns

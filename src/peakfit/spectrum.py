@@ -69,70 +69,63 @@ class Spectrum:
         return rtn
 
 
-    def _register_backgroundresults(self, df: pd.DataFrame):
-        """
-        x
-        y
-        bg
-        sig_est
-        nit
-        cost
-        """
+    def _register_bg_results(self, df: pd.DataFrame):
         self.background_result  = df
-        self.data.update_y_bg(df.bg)
+        self.data.update_x(df["x"])
+        self.data.update_y_raw(df["y"])
+        self.data.update_y_bg(df["bg"])
         return
-
-
-    def _beads(self, params):
-
-        if params["xclip_range"] is not None:
-            _df_raw_clipped = cmn.xclip(self.xy_raw, params["xclip_range"])
-
-        _df_extended = bg.extend_slope(
-            xy          = _df_raw_clipped, 
-            steepness   = params["steepness"], 
-            lscale      = params["lscale"]
-        )
-        self.data.update_x(_df_extended.x)
-        self.data.update_y_raw(_df_extended.y)
-        _df_beads_result = bg.beads(xy=_df_extended)
-
-        return _df_beads_result
 
 
     def fit_background(
         self, 
-        params      : object,
-        background  : callable,    # TODO like scipy.optimize functions.
-        mode        : str       | None = None, 
+        func        : callable,
+        xy          = None,
+        args        = (),
+        kwargs      = {},
     ):
         """
-        mode: background type.
-        params: parameters for background estimation.
+        Parameters
+        ----------
+        func : callable
+            Function which computes the vector backgrounds 
+            with the signature ``func(xy, *args, **kwargs)``.
+            The return value of `func` must include a `bg` attribute
+            as results.
+        
+        xy : pandas.DataFrame, optional
+            DataFrame of xy for background fitting. If None (default),
+            the value is `self.data.xy_raw`.
+
+        args, kwargs : tuple and dict, optional
+            Additional arguments passed to `func`. Both empty by default.
         """
 
-        if   mode == bg.BEADS:
-            # params should have xrange, steepness and lscale.
-            df_bgfitresult = self._beads(params)
-            self.data.update_y_bg(df_bgfitresult["bg"])
-        elif mode == bg.SHIRLEY:
-            # params should have xrange.
-            raise
+        if xy is None:
+            xy_passing = pd.DataFrame({"x": self.data.x, "y": self.data.y_raw})
         else:
-            raise
-        
-        self._register_backgroundresults(df_bgfitresult)
+            xy_passing = xy
 
-        return df_bgfitresult
+        bg_result = func(xy_passing, *args, **kwargs)
+
+        self._register_bg_results(bg_result)
+
+        return bg_result
 
 
     def fit(
         self, 
-        xrange  : tuple | None = None,  # TODO
-        bg      : str   | None = None,  # TODO
+        xrange      : tuple         | None = None,  # TODO
+        bg          : str           | None = None,  # TODO
+        fitparam    : pd.DataFrame  | None = None,
     ):
         if self.fitparam is None:
             raise
+
+        if self.data.has_bg():
+            y_for_fit = self.data.y_raw_without_bg
+        else:
+            y_for_fit = self.data.y_raw
 
         # Fitting #
         self.optimize_result = cmn.leastsq(
@@ -140,13 +133,13 @@ class Spectrum:
             model       = self.fitmodel,
             fitparam    = self.fitparam,
             x           = self.data.x,
-            y           = self.data.y_raw,
+            y           = y_for_fit,
         )
 
         if not self.optimize_result.success:
             print("ERROR")
             print(self.optimize_result)
-            return
+            raise
 
         self._register_fitresults()
 
@@ -197,15 +190,22 @@ class Spectrum:
         range       : tuple,
         newfitparam : pd.DataFrame | None = None
     ):
+        """
+        Roughly clipping xy data by x-axis range.
+        
+        - xy    : pd.Dataframe like including "x" and "y" columns.
+        - range : Tuple object as (begin, end).
+        """
         _xy = cmn.xclip(xy=self.data.xy_all, range=range)
+
         return Spectrum(xy=_xy, fitparam=newfitparam)  # TODO: xySeries class
     
 
     def xshift(
         self,
-        xshift      : float,
+        shift      : float,
     ):
-        self.data.x = self.data.x + xshift
+        self.data.xshift(shift)
         return self
     
 

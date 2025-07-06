@@ -14,9 +14,9 @@ def __x_index__():
     return
 
 def extend_slope(
-    xy:         pd.DataFrame,
-    steepness:  float = 0.01,
-    lscale:     float = 0.3,
+    xy,
+    steepness   : float = 0.01,
+    lscale      : float = 0.3,
 ) -> pd.DataFrame:
     """
     ## extend_slope()
@@ -49,18 +49,18 @@ def extend_slope(
     # The "extention_index_size" is *roughly* equal to 
     # an index size of the one-side extention.
     #
-    extention_half_index_size = int(oneside_length_half / dx)
-    real_oneside_length_half = extention_half_index_size * dx
+    half_of_extention_index_size = int(oneside_length_half / dx)
+    half_of_real_oneside_length = half_of_extention_index_size * dx
     # The "x_d" is total length of one-side extention in x-dimension.
-    x_ext = np.arange(-1 * real_oneside_length_half, real_oneside_length_half, dx)
+    x_ext = np.arange(-1 * half_of_real_oneside_length, half_of_real_oneside_length, dx)
 
     #
     # Shifting the center of 
     # left  extension to (x_raw_first - x_d) and
     # right extension to (x_raw_last  + x_d).
     # 
-    x_l = x_ext + (x_raw_first - real_oneside_length_half)
-    x_r = x_ext + (x_raw_last  + real_oneside_length_half)
+    x_l = x_ext + (x_raw_first - half_of_real_oneside_length)
+    x_r = x_ext + (x_raw_last  + half_of_real_oneside_length)
 
     y_l = y_l_norm * sigmoid( 1 * steepness * x_ext)
     y_r = y_r_norm * sigmoid(-1 * steepness * x_ext)
@@ -75,7 +75,7 @@ def extend_slope(
 
     return rtn
 
-def extend(xy: pd.DataFrame, xscale=0.05, rscale=4) -> pd.DataFrame:
+def extend(xy, xscale=0.05, rscale=4) -> pd.DataFrame:
     """
     Not recommended. Use extend_slope()
     """
@@ -107,7 +107,7 @@ def extend(xy: pd.DataFrame, xscale=0.05, rscale=4) -> pd.DataFrame:
 
 
 def beads(
-    xy: pd.DataFrame, 
+    xy, 
     fc    = 0.01,
     d     = 1,
     r     = 6,
@@ -140,8 +140,34 @@ def beads(
 
     y_wo_bg = xy.y - bg_est
 
-    data = pd.DataFrame({"x": xy.x, "y": y_wo_bg, "bg": bg_est, "sig_est": signal_est})
+    #data = pd.DataFrame({"x": xy.x, "y": y_wo_bg, "bg": bg_est, "sig_est": signal_est})
+    data = pd.DataFrame({"x": xy.x, "y": xy.y, "y_wo_bg": y_wo_bg, "bg": bg_est, "sig_est": signal_est})
     cost_data = pd.DataFrame({"nit": range(Nit), "cost": cost})
     result = pd.concat([data, cost_data], axis="columns")
 
     return result
+
+
+def beads_with_slope(
+    xy          : any,
+    xclip_range : tuple | None = None,
+    steepness   = None,
+    lscale      = None,
+    args        = (),
+    kwargs      = {},
+):
+    if xclip_range is not None:
+        xy = cmn.xclip(xy, xclip_range)
+
+    xy_extended = extend_slope(
+        xy          = xy, 
+        steepness   = steepness, 
+        lscale      = lscale,
+    )
+
+    df_result = beads(xy=xy_extended, *args, **kwargs)
+    
+    # TODO: Size of `xy_extended` exceeding the original dataframe size
+    # and the excess data are cut-off.
+
+    return df_result
