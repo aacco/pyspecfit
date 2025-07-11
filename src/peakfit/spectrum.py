@@ -71,8 +71,13 @@ class Spectrum:
 
     def _register_bg_results(self, df: pd.DataFrame):
         self.background_result  = df
-        self.data.update_x(df["x"])
-        self.data.update_y_raw(df["y"])
+
+        if "x" in df.columns:
+            self.data.update_x(df["x"])
+
+        if "y" in df.columns:
+            self.data.update_y_raw(df["y"])
+
         self.data.update_y_bg(df["bg"])
         return
 
@@ -127,13 +132,18 @@ class Spectrum:
         else:
             y_for_fit = self.data.y_raw
 
+        xy_for_fit = pd.DataFrame({"x": self.data.x, "y": y_for_fit})
+
+        if xrange is not None:
+            xy_for_fit = cmn.xclip(xy_for_fit, xrange, reset_index=False)
+
         # Fitting #
         self.optimize_result = cmn.leastsq(
-            xy          = None,
+            xy          = xy_for_fit,
             model       = self.fitmodel,
             fitparam    = self.fitparam,
-            x           = self.data.x,
-            y           = y_for_fit,
+            #x           = self.data.x,
+            #y           = y_for_fit,
         )
 
         if not self.optimize_result.success:

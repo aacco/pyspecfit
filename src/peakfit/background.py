@@ -159,6 +159,7 @@ def beads_with_slope(
     if xclip_range is not None:
         xy = cmn.xclip(xy, xclip_range)
 
+    # Preparation for beads background estimation: adding slope.
     xy_extended = extend_slope(
         xy          = xy, 
         steepness   = steepness, 

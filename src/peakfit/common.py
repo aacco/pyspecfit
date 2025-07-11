@@ -33,17 +33,35 @@ def xlim(xy, xlim_range: tuple):  # should be a class?
     _xy = np.array([xy[0][i_x_min:i_x_max + 1], xy[1][i_x_min:i_x_max + 1]])
     return _xy
 
-def xclip(xy: any, range: tuple) -> pd.DataFrame:
+def is_descending(xy: pd.DataFrame | None = None, x: any = None):
+    if xy is not None:
+        return (xy.x[1] - xy.x[0]) < 0
+    elif x is not None:
+        return (x[1] - x[0]) < 0
+    else:
+        raise
+
+def xclip(xy: any, range: tuple, reset_index=True) -> pd.DataFrame:
     """
     Roughly clipping xy data by x-axis range.
     - xy    : pd.Dataframe like including "x" and "y" columns.
     - range : Tuple object as (begin, end).
     """
     x = xy.x.to_numpy()
-    i_x_min = np.where(x >= range[0])[0][0]
-    i_x_max = np.where(x >= range[1])[0][0]
-    _xy_rtn = xy.loc[i_x_min:i_x_max]
-    xy_rtn = _xy_rtn.reset_index(drop=True)
+
+    if is_descending(xy):
+        i_x_min = np.where(x <= range[1])[0][0]
+        i_x_max = np.where(x <= range[0])[0][0]
+    else:
+        i_x_min = np.where(x >= range[0])[0][0]
+        i_x_max = np.where(x >= range[1])[0][0]
+
+    
+    xy_rtn = xy.loc[ i_x_min : i_x_max ]
+
+    if reset_index:
+        xy_rtn = xy_rtn.reset_index(drop=True)
+
     return xy_rtn
 
 def normalize(xy):
@@ -207,8 +225,10 @@ def series_fwhm(param: pd.DataFrame) -> pd.Series:
     return param.apply(lambda row: calc_fwhm(row['gamma'], row['sigma']), axis=1)
 
 def calc_area(x, y):
-    #area, _ = scipy.integrate.quad()
-    area = np.trapz(y, x)
+    if is_descending(x=x):
+        area = -1 * np.trapz(y, x)
+    else:
+        area = np.trapz(y, x)
     return area
 
 def series_area(xy: pd.DataFrame) -> pd.Series:
