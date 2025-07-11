@@ -3,20 +3,19 @@ Do
 ```shell
 pip install -e .
 ```
-in `peakfit/` top directory.
+in `pyeakfit/` top directory.
 
 # Directories
 ```Markdown
-- peakfit
+- pyeakfit
     - src
-        - peakfit
-            - __init__.py
-            - common.py
-            - model.py
-            - peak.py
-            - raman.py
-            - smartlab.py
-            - xps.py
+        - __init__.py
+        - common.py
+        - model.py
+        - peak.py
+        - raman.py
+        - smartlab.py
+        - xps.py
     - test
     - README.md
     - setup.py

@@ -1,13 +1,6 @@
-import peakfit
 from .xyseries import xySeries
 from . import common as cmn
-from . import model as mdl
-from . import background as bg
 import pandas as pd
-import matplotlib.pyplot as plt
-import scipy
-import scipy.optimize
-import numpy as np
 
 class Spectrum:
     """
@@ -178,12 +171,16 @@ class Spectrum:
             fitparam    = self.fitparam
         )
         
+        #
         # y-axis data by eliminating "x" column 
         # (= screening by "peak_name" column) from xy_eles.
+        #
         self.element_peaknames      = self.fitparam["peak_name"]
         self.data.update_y_eles(xy_eles[self.element_peaknames])
 
+        #
         # Calculation on peak parameters #
+        #
         self.resultparam['FWHM']    = cmn.series_fwhm(self.resultparam)
         self.resultparam['area']    = cmn.series_area(self.data.xy_eles)
         

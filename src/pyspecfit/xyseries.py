@@ -1,12 +1,4 @@
-import peakfit
-from . import common as cmn
-from . import model as mdl
-from . import background as bg
 import pandas as pd
-import matplotlib.pyplot as plt
-import scipy
-import scipy.optimize
-import numpy as np
 
 class xySeries:
     """
