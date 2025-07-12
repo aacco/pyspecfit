@@ -67,4 +67,4 @@ These component accessors are shortcuts for `.data`, for example `.x` is a short
  - [Matplotlib](https://matplotlib.org/)
 
 # License
-MIT license
+[MIT license](https://github.com/aacco/pyspecfit/blob/main/LICENSE)
