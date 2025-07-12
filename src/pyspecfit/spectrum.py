@@ -23,8 +23,27 @@ class Spectrum:
         self, 
         xy          : pd.DataFrame | None, 
         fitparam    : pd.DataFrame | None = None,
-        path        : str          | None = None,
+        loadpath    : str          | None = None,
     ):
+        """
+        Parameters
+        ----------
+        xy : pandas.DataFrame
+            Raw data of spectrum in x- and y-axis.
+            The `xy` argument must have two columns of `x`, and `y` or `y_raw`. 
+
+        fitparam : pandas.Dataframe
+            Fitting parameters inclueding following columns: peak_name, display_name, 
+            is_used, peak_type, bg_start, bd_end, fit_start, fit_end, position_guess, 
+            position_limit_lower, position_limit_upper, position_hold, gamma_guess, 
+            gamma_limit_lower, gamma_limit_upper, gamma_hold, sigma_guess, 
+            sigma_limit_lower, sigma_limit_upper, sigma_hold, norm_guess, norm_limit_lower, 
+            norm_limit_upper, and norm_hold.
+
+        loadpath : str
+            Path for an already-fitted csv file. This argument should exclusively used by 
+            a class method `load_csv`.
+        """
         if xy is not None:
             self.data       = xySeries(xy)
 
@@ -32,11 +51,11 @@ class Spectrum:
                 self.fitparam   = None
                 self.fitmodel   = None
             else:
-                self.fitparam   = fitparam  # Maybe None.
+                self.set_fitparam(fitparam)
                 self.fitmodel   = cmn.fitmodeling(self.fitparam)
 
-        elif path is not None:
-            df              = pd.read_csv(path)
+        elif loadpath is not None:
+            df              = pd.read_csv(loadpath)
             self.data       = xySeries(df)
             self.fitparam   = None
             self.fitmodel   = None
@@ -51,7 +70,8 @@ class Spectrum:
         self,
         fitparam    : pd.DataFrame
     ):
-        self.fitparam = fitparam
+        used_fitparam = fitparam[fitparam["is_used"] == True]
+        self.fitparam = used_fitparam
         return
     
 
@@ -117,6 +137,9 @@ class Spectrum:
         bg          : str           | None = None,  # TODO
         fitparam    : pd.DataFrame  | None = None,
     ):
+        if fitparam is not None:
+            self.set_fitparam(fitparam)
+
         if self.fitparam is None:
             raise
 
@@ -221,5 +244,75 @@ class Spectrum:
         """
         Loading a csv file of xy_all data (already-fitted and exported).
         """
-        return cls(xy=None, fitparam=None, path=path)
+        return cls(xy=None, fitparam=None, loadpath=path)
+    
 
+    # Bypass for self.data properties.
+    @property
+    def xy_all(self):
+        return self.data.xy_all
+
+    @property
+    def all(self):
+        """Short for xy_all"""
+        return self.data.xy_all
+
+    @property
+    def xy_raw(self):
+        return self.data.xy_raw
+
+    @property
+    def raw(self):
+        """
+        Shortcut for xy_raw
+        """
+        return self.data.xy_raw
+
+    @property
+    def x(self):
+        return self.data.x
+
+    @property
+    def y_raw(self):
+        return self.data.y_raw
+
+    @property
+    def y(self):
+        """
+        Shortcut for `y_raw`.
+        """
+        return self.data.y_raw
+
+    @property
+    def y_bg(self):
+        return self.data.y_bg
+
+    @property
+    def y_raw_without_bg(self):
+        return self.data.y_raw_without_bg
+
+    @property
+    def y_fit(self):
+        return self.data.y_fit
+
+    @property
+    def xy_eles(self):
+        return self.data.xy_eles
+
+    @property
+    def y_eles(self):
+        return self.data.y_eles
+
+    @property
+    def columns(self):
+        return self.data.columns
+
+    @property
+    def columns_elements(self):
+        return self.data.columns_elements
+
+    def data_to_df(self):
+        return self.data.to_df()
+    
+    def has_bg(self):
+        return self.data.has_bg()

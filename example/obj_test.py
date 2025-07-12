@@ -22,9 +22,9 @@ test_peak.resultparam.to_csv(BASE_PATH + "log/resultparam.csv", index=False)
 
 # Plotting #
 fig, ax = plt.subplots()
-ax.plot(test_peak.data.x, test_peak.data.y_raw)
-ax.plot(test_peak.data.x, test_peak.data.y_fit)
-for col_name in test_peak.data.y_eles:
-    ax.fill_between(test_peak.data.x, test_peak.data.y_eles[col_name], alpha=0.25)
+ax.plot(test_peak.x, test_peak.y_raw)
+ax.plot(test_peak.x, test_peak.y_fit)
+for col_name in test_peak.y_eles:
+    ax.fill_between(test_peak.x, test_peak.y_eles[col_name], alpha=0.25)
 
 plt.show()
