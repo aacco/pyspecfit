@@ -1,0 +1,5 @@
+﻿peak_name,display_name,is_used,peak_type,bg_start,bd_end,fit_start,fit_end,position_guess,position_limit_lower,position_limit_upper,position_hold,gamma_guess,gamma_limit_lower,gamma_limit_upper,gamma_hold,sigma_guess,sigma_limit_lower,sigma_limit_upper,sigma_hold,norm_guess,norm_limit_lower,norm_limit_upper,norm_hold,d_ratio_guess,d_ratio_limit_lower,d_ratio_limit_upper,d_ratio_hold,d_shift_guess,d_shift_limit_lower,d_shift_limit_upper,d_shift_hold
+A,A,TRUE,singlet,150,500,150,500,100,90,110,FALSE,5,0.00001,FALSE,FALSE,6,0,FALSE,FALSE,100,0.00001,FALSE,FALSE,,,,,,,,
+B,B,TRUE,doublet,150,500,150,500,150,140,160,FALSE,5,0.00001,FALSE,FALSE,6,0,FALSE,FALSE,100,0.00001,FALSE,FALSE,0.66,0.6,0.9,FALSE,10,1,50,FALSE
+C,C,TRUE,doublet,150,500,150,500,200,190,210,FALSE,5,0.00001,FALSE,FALSE,6,0,FALSE,FALSE,100,0.00001,FALSE,FALSE,0.66,0.6,0.9,FALSE,20,1,50,FALSE
+D,D,TRUE,singlet,150,500,150,500,250,240,260,FALSE,5,0.00001,FALSE,FALSE,6,0,FALSE,FALSE,100,0.00001,FALSE,FALSE,,,,,,,,
