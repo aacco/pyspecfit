@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 
 class xySeries:
@@ -44,13 +45,18 @@ class xySeries:
         df_cleaned = df.drop(columns=cols_to_drop)
         return df_cleaned
 
-
-
     def _ndlist_to_serieslist(self, nds: list) -> list:
         rtn = []
         for nd in nds:
             rtn.append(pd.Series(nd))
         return rtn
+
+    def to_df(self):
+        return self.xy_all
+    
+    def has_bg(self):
+        return self.ID_Y_BG in self.columns
+
 
     @property
     def xy_all(self):
@@ -110,8 +116,8 @@ class xySeries:
         return
 
     @property
-    def y_raw_without_bg(self):
-        return self.xy_all[self.ID_Y_RAW] - self.xy_all[self.ID_Y_BG]
+    def y_raw_without_bg(self) -> pd.Series:
+        return self.xy_all[self.ID_Y_RAW] - self.y_bg
 
     @property
     def y_fit(self):
@@ -144,9 +150,22 @@ class xySeries:
         ele_list = [c for c in self.columns if not c in self.FUNDAMENTAL_COLS]
         return ele_list
     
-
-    def to_df(self):
-        return self.xy_all
+    @property
+    def residual(self):
+        return self.y_raw - self.y_fit
     
-    def has_bg(self):
-        return self.ID_Y_BG in self.columns
+    @property
+    def rms(
+        self,
+        decimals : int | None = 2
+    ):
+        """
+        Root mean squared errors.
+        Parameter
+        ----------
+        decimals : int or None
+            Deciaml index passed for `numpy.round()`.
+        """
+        r = self.residual.dropna()
+        return np.round(np.sqrt((r**2).mean()), decimals)
+    

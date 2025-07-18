@@ -55,7 +55,10 @@ class Spectrum:
                 self.fitmodel   = cmn.fitmodeling(self.fitparam)
 
         elif loadpath is not None:
-            df              = pd.read_csv(loadpath)
+            _df              = pd.read_csv(loadpath)
+            # Drop columns whose names contain "Unnamed" (case-insensitive)
+            df              = _df.loc[:, ~_df.columns.str.contains('^Unnamed', case=False)]
+
             self.data       = xySeries(df)
             self.fitparam   = None
             self.fitmodel   = None
@@ -182,11 +185,11 @@ class Spectrum:
             fitparam    = self.fitparam
         )
 
-        y_fit  = self.fitmodel(
+        y_fit_wo_bg  = self.fitmodel(
             x           = self.data.x.to_numpy(), 
             args        = self.optimize_result.x
         )
-        self.data.update_y_fit(y_fit)
+        self.data.update_y_fit(y_fit_wo_bg + self.y_bg)
 
         xy_eles = cmn.build_peak_elements(
             x           = self.data.x.values, 
@@ -288,7 +291,7 @@ class Spectrum:
         return self.data.y_bg
 
     @property
-    def y_raw_without_bg(self):
+    def y_raw_without_bg(self) -> pd.Series:
         return self.data.y_raw_without_bg
 
     @property
@@ -310,6 +313,17 @@ class Spectrum:
     @property
     def columns_elements(self):
         return self.data.columns_elements
+
+    @property
+    def residual(self) -> pd.Series:
+        return self.data.residual
+    
+    @property
+    def rms(self):
+        """
+        Root mean squared errors.
+        """
+        return self.data.rms
 
     def data_to_df(self):
         return self.data.to_df()
