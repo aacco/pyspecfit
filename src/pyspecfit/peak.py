@@ -1,5 +1,6 @@
 import json
 import numpy as np
+from . import xps
 
 class Peak:
     """

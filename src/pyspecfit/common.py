@@ -284,9 +284,12 @@ def least_squares(
         # Minimizing residual function
         residual,                          # Function of residuals
         fitparam["guesses"],               # Initial guessing value of fitting
-        bounds  = fitparam["boundaries"],  # Limit of fitting
-        args    = fit_args,                # Arguments passed to residual functions 
-        max_nfev= 10000
+        bounds   = fitparam["boundaries"],  # Limit of fitting
+        args     = fit_args,                # Arguments passed to residual functions 
+        max_nfev = 1000,
+        x_scale='jac',
+        #xtol=1e-8,
+        #ftol=1e-8,
     )
     if not result.success:
         print("ERROR")

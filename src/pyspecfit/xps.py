@@ -266,7 +266,7 @@ def shirley(
             area_P_plus_Q   = dx * (np.sum(J_list - B_list)          - 0.5 * (J_list[0] - B_list[0] + J_list[-1] - B_list[-1]))
             B_list[j]       = (y_list_clipped[0] - y_list_clipped[-1]) * area_Q / area_P_plus_Q + y_list_clipped[-1]
 
-        print(f"    Loop_no.: {i}, P+Q: {round(area_P_plus_Q, 5)} (delta: {round((area_P_plus_Q - area_P_plus_Q_old) / area_P_plus_Q * 100, 5)}%)")
+        print(f"    Loop_no.: {i}, P+Q: {round(area_P_plus_Q * -1, 5)} (delta: {round((area_P_plus_Q - area_P_plus_Q_old) / area_P_plus_Q * 100, 5)}%)")
 
         if (abs(area_P_plus_Q - area_P_plus_Q_old) < abs(area_P_plus_Q) * 0.0001):
             break

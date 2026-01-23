@@ -1,8 +1,11 @@
+import numpy as np
 import pandas as pd
 
 class xySeries:
     """
-    Wrapper class of pandas.DataFrame for fitting.
+    "xySeries" is a wrapper class of pandas.DataFrame
+    and provides a base structure of "Spectrum class".
+
     - self.xy_all
     - self.x
     - self.y_raw
@@ -11,6 +14,14 @@ class xySeries:
     - self.xy_eles
     - self.y_eles  # y-axis extraction from self.xy_eles.
     - self.element_peaknames
+
+
+    MultiIndex columns of self.xy_all look like this:
+    ---------------------------------------------------------
+    | base                      | peak                 ...
+    |  x   | y_raw| y_bg | y_fit| ele1 | ele2 | ele3 | ...
+    | ...  | ...  | ...  | ...  | ...  | ...  | ...  | ...
+    ---------------------------------------------------------
     """
 
     ID_XY_ALL   = "xy_all"
@@ -35,6 +46,7 @@ class xySeries:
     #    ID_Y_FIT,
     #]
 
+    # Define names of MultiIndex columns where the first level is "base".
     INIT_MULTI_COLMN = [
         (ID_FIRST_BASE,     ID_SECOND_X    ),
         (ID_FIRST_BASE,     ID_SECOND_RAW  ),
@@ -52,13 +64,13 @@ class xySeries:
         loaded_data : pd.DataFrame                  = None,
     ):
 
-        if x is None and raw is None and loaded_data is None:
+        if (x is None) and (raw is None) and (loaded_data is None):
             raise
 
         if loaded_data is not None:
             df_init     = loaded_data
 
-        if x is not None and raw is not None:
+        if (x is not None) and (raw is not None):
             df_init     = pd.DataFrame(
                 data    = None,
                 columns = self.INIT_COLS,
@@ -66,7 +78,6 @@ class xySeries:
 
             df_init[self.ID_FIRST_BASE, self.ID_SECOND_X]     = x
             df_init[self.ID_FIRST_BASE, self.ID_SECOND_RAW]   = raw
-
 
         self.__xy_all   = df_init
 

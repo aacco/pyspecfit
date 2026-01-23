@@ -22,9 +22,9 @@ class Spectrum:
 
     def __init__(
         self, 
-        x           : pd.Series    | np.ndarray | None = None,
-        raw         : pd.Series    | np.ndarray | None = None,
-        xy          : pd.DataFrame              | None = None, 
+        x           : pd.Series    | np.ndarray | None = None,  # x-axis data.
+        raw         : pd.Series    | np.ndarray | None = None,  # y-axis raw data.
+        xy          : pd.DataFrame              | None = None,  # combination of x and raw as DataFrame.
         sanitized   : bool                             = False,
         fitparam    : pd.DataFrame              | None = None,
         loadpath    : str                       | None = None,
@@ -52,14 +52,12 @@ class Spectrum:
         else:
             raise
 
-
         if fitparam is None:
             self.fitparam   = None
             self.fitmodel   = None
         else:
             self.set_fitparam(fitparam)
             self.fitmodel   = cmn.fitmodeling(self.fitparam)
-
 
         self.background_result  = None
     
@@ -68,7 +66,8 @@ class Spectrum:
         self,
         fitparam    : pd.DataFrame
     ):
-        self.fitparam = fitparam
+        used_fitparam = fitparam[fitparam["is_used"] == True]
+        self.fitparam = used_fitparam
         return
     
 
@@ -124,8 +123,10 @@ class Spectrum:
         else:
             xy_passed = xy
 
+        # Background fitting #
         bg_result = func(xy_passed, *args, **kwargs)
 
+        # Register background results #
         self._register_bg_results(bg_result, bg_name)
 
         return bg_result
@@ -139,12 +140,14 @@ class Spectrum:
         if self.fitparam is None:
             raise
 
+        # "y_for_fit" must have no background component.
         if self.data.has_bg():
             y_for_fit = self.data.y_raw_without_bg
         else:
             y_for_fit = self.data.y_raw
 
         xy_for_fit = pd.DataFrame({"x": self.data.x, "y": y_for_fit})
+
 
         if xrange is not None:
             xy_for_fit = cmn.xclip(xy_for_fit, xrange, reset_index=False)
@@ -157,6 +160,10 @@ class Spectrum:
             #x           = self.data.x,
             #y           = y_for_fit,
         )
+
+        if self.optimize_result.success:
+            print("Fitting succeeded.")
+            print(self.optimize_result)
 
         if not self.optimize_result.success:
             print("ERROR")
@@ -178,11 +185,17 @@ class Spectrum:
             fitparam    = self.fitparam
         )
 
-        y_fit  = self.fitmodel(
+        y_fit_wo_bg  = self.fitmodel(
             x           = self.data.x.to_numpy(), 
             args        = self.optimize_result.x
         )
-        self.data.update_y_fit(y_fit)
+
+        #
+        # Update y_fit including background component.
+        # "y_fit" data out of the fitting range will be NaN 
+        # because sum of any value and NaN will be NaN.
+        #
+        self.data.update_y_fit(y_fit_wo_bg + self.data.y_bg)
 
         xy_eles = cmn.build_peak_elements(
             x           = self.data.x.values, 
@@ -260,7 +273,7 @@ class Spectrum:
 
     def xshift(
         self,
-        shift      : float,
+        shift      : float, # shift value
     ):
         self.data.xshift(shift)
         return self
@@ -271,7 +284,7 @@ class Spectrum:
         """
         Loading a csv file of xy_all data (already-fitted and exported).
         """
-        return cls(xy=None, fitparam=None, path=path)
+        return cls(xy=None, fitparam=None, loadpath=path)
 
     # Bypass for self.data properties.
     @property
@@ -350,7 +363,9 @@ class Spectrum:
         """
         Root mean squared errors.
         """
-        return self.data.rms
+        r = self.data.residual
+        rms = np.sqrt( ( r**2 ).mean() )
+        return np.round(rms, 4)
 
     def data_to_df(self):
         return self.data.to_df()

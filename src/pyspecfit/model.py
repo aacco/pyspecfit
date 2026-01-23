@@ -47,8 +47,10 @@ def doublet(x, params):
     main_peak = voigt(x, p_main)
     sub_params = [p_main[0] + d_shift, p_main[1], p_main[2], p_main[3] * d_ratio]
     sub_peak = voigt(x, sub_params)
-    #print(f"main_peak:\n{main_peak}")
-    return main_peak + sub_peak
+    #print(f"main_peak:\n{main_peak}\n")
+    #print(f"sub_peak:\n{sub_peak}\n")
+    total = main_peak + sub_peak
+    return total
 
 def residual(params, model_func, x, y):
     model = model_func(x, params)
