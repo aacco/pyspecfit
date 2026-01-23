@@ -236,15 +236,25 @@ def baseline(xy: pd.DataFrame, range: tuple):
     bl = pd.DataFrame({"x":xy.x, "y": linear(xy.x, *popt)})
     return bl
 
-def shirley(xy: pd.DataFrame, fitrange: tuple):
+def shirley(
+    xy: pd.DataFrame, 
+    fitrange: tuple, 
+    init_B = None,
+):
     print("fit_bg_shirley:")
 
     xy_clipped = cmn.xclip(xy, fitrange, reset_index=False)
     x_list_clipped = xy_clipped.x.to_numpy()
     y_list_clipped = xy_clipped.y.to_numpy()
 
+    # Initialization
     dx                  = x_list_clipped[1] - x_list_clipped[0]
-    B_list              = np.full(len(x_list_clipped), y_list_clipped[0])   # Initialize background (Blist).
+
+    if init_B is None:
+        B_list          = np.full(len(x_list_clipped), y_list_clipped[0])   # Initialize background (Blist).
+    else:
+        B_list          = init_B
+
     J_list              = y_list_clipped.copy()                             # Initialize
     area_P_plus_Q       = 0                                                 # Initialize
     area_P_plus_Q_old   = 0                                                 # Initialize
@@ -426,7 +436,7 @@ def load_init_peak(path: str):
     #}
     return range_linear, range_peak, parse_result
 
-def chi_squared(params, model_func, x, y, y_errors):
+def chi_squared(params, model_func, x, y, y_errors): # TODO: check
     # Residual function: chi-squared testing
     model = model_func(x, params)
     chi = (y - model) / y_errors

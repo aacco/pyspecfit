@@ -1,6 +1,7 @@
 from .xyseries import xySeries
 from . import common as cmn
 import pandas as pd
+import numpy as np
 
 class Spectrum:
     """
@@ -21,28 +22,44 @@ class Spectrum:
 
     def __init__(
         self, 
-        xy          : pd.DataFrame | None, 
-        fitparam    : pd.DataFrame | None = None,
-        path        : str          | None = None,
+        x           : pd.Series    | np.ndarray | None = None,
+        raw         : pd.Series    | np.ndarray | None = None,
+        xy          : pd.DataFrame              | None = None, 
+        sanitized   : bool                             = False,
+        fitparam    : pd.DataFrame              | None = None,
+        loadpath    : str                       | None = None,
     ):
         if xy is not None:
-            self.data       = xySeries(xy)
-
-            if fitparam is None:
-                self.fitparam   = None
-                self.fitmodel   = None
+            if sanitized:
+                self.data = xySeries(loaded_data=xy)
             else:
-                self.fitparam   = fitparam  # Maybe None.
-                self.fitmodel   = cmn.fitmodeling(self.fitparam)
+                cols = []
+                for col in xy.columns:
+                    cols.append(col)
+                self.data       = xySeries(x=xy[cols[0]], raw=xy[cols[1]])
 
-        elif path is not None:
-            df              = pd.read_csv(path)
-            self.data       = xySeries(df)
-            self.fitparam   = None
-            self.fitmodel   = None
+        elif x is not None and raw is not None:
+            self.data       = xySeries(x=x, raw=raw)
+
+        # For loaded data.
+        elif loadpath is not None:
+            df             = pd.read_csv(loadpath, header=[0, 1])  # With multi-columns.
+
+            # Drop columns whose names contain "Unnamed" (case-insensitive)
+            #df              = _df.loc[:, ~_df.columns.str.contains('^Unnamed', case=False)]
+            self.data       = xySeries(loaded_data=df)
 
         else:
             raise
+
+
+        if fitparam is None:
+            self.fitparam   = None
+            self.fitmodel   = None
+        else:
+            self.set_fitparam(fitparam)
+            self.fitmodel   = cmn.fitmodeling(self.fitparam)
+
 
         self.background_result  = None
     
@@ -62,22 +79,25 @@ class Spectrum:
         return rtn
 
 
-    def _register_bg_results(self, df: pd.DataFrame):
+    def _register_bg_results(self, df: pd.DataFrame, bg_type):
         self.background_result  = df
 
+        # TODO: refactoring.
+        # If returned value contains "x" attribute, update x-axis.
         if "x" in df.columns:
             self.data.update_x(df["x"])
 
         if "y" in df.columns:
-            self.data.update_y_raw(df["y"])
+            self.data.update_raw(df["y"])
 
-        self.data.update_y_bg(df["bg"])
+        self.data.update_bg_element(ser=df["bg"], column_name=bg_type)
         return
 
 
     def fit_background(
         self, 
         func        : callable,
+        bg_name     = None,
         xy          = None,
         args        = (),
         kwargs      = {},
@@ -100,13 +120,13 @@ class Spectrum:
         """
 
         if xy is None:
-            xy_passing = pd.DataFrame({"x": self.data.x, "y": self.data.y_raw})
+            xy_passed = pd.DataFrame({"x": self.data.x, "y": self.data.y_raw})
         else:
-            xy_passing = xy
+            xy_passed = xy
 
-        bg_result = func(xy_passing, *args, **kwargs)
+        bg_result = func(xy_passed, *args, **kwargs)
 
-        self._register_bg_results(bg_result)
+        self._register_bg_results(bg_result, bg_name)
 
         return bg_result
 
@@ -114,7 +134,6 @@ class Spectrum:
     def fit(
         self, 
         xrange      : tuple         | None = None,  # TODO
-        bg          : str           | None = None,  # TODO
         fitparam    : pd.DataFrame  | None = None,
     ):
         if self.fitparam is None:
@@ -176,36 +195,67 @@ class Spectrum:
         # (= screening by "peak_name" column) from xy_eles.
         #
         self.element_peaknames      = self.fitparam["peak_name"]
-        self.data.update_y_eles(xy_eles[self.element_peaknames])
+        for col in self.element_peaknames:
+            self.data.update_peak_element(ser=xy_eles[col], column_name=col)
 
         #
         # Calculation on peak parameters #
         #
         self.resultparam['FWHM']    = cmn.series_fwhm(self.resultparam)
-        self.resultparam['area']    = cmn.series_area(self.data.xy_eles)
+        self.resultparam['area']    = cmn.series_area(x=self.data.x, peaks=self.data.peaks)
         
         return
 
 
     def print_resultparam(self):
         print(self.resultparam.drop(columns=["display_name"]))
+        #print(self.data.all)
         return
 
 
+    #def xclip(
+    #    self,
+    #    range       : tuple,
+    #    newfitparam : pd.DataFrame | None = None
+    #):
+    #    """
+    #    Roughly clipping xy data by x-axis range.
+    #    
+    #    - xy    : pd.Dataframe like including "x" and "y" columns.
+    #    - range : Tuple object as (begin, end).
+    #    """
+    #    _xy = cmn.xclip(xy=self.data.xy_all, range=range)
+
+    #    return Spectrum(xy=_xy, fitparam=newfitparam)  # TODO: xySeries class
+
     def xclip(
         self,
-        range       : tuple,
-        newfitparam : pd.DataFrame | None = None
+        clip_range  : tuple, 
+        reset_index                       = True,
+        newfitparam : pd.DataFrame | None = None,
     ):
         """
         Roughly clipping xy data by x-axis range.
-        
         - xy    : pd.Dataframe like including "x" and "y" columns.
         - range : Tuple object as (begin, end).
         """
-        _xy = cmn.xclip(xy=self.data.xy_all, range=range)
+        xy = self.data.all
+        x = xy["base", "x"]
 
-        return Spectrum(xy=_xy, fitparam=newfitparam)  # TODO: xySeries class
+        if cmn.is_descending(xy["base"]):
+            i_x_min = cmn.x_to_index(clip_range[1], x)
+            i_x_max = cmn.x_to_index(clip_range[0], x)
+        else:
+            i_x_min = cmn.x_to_index(clip_range[0], x)
+            i_x_max = cmn.x_to_index(clip_range[1], x)
+
+        xy_rtn = xy.loc[ i_x_min : i_x_max ]
+
+        if reset_index:
+            xy_rtn = xy_rtn.reset_index(drop = True)
+        #print(f"xy_rtn: {xy_rtn}")
+
+        return Spectrum(xy=xy_rtn, sanitized=True, fitparam=newfitparam)
     
 
     def xshift(
@@ -223,3 +273,94 @@ class Spectrum:
         """
         return cls(xy=None, fitparam=None, path=path)
 
+    # Bypass for self.data properties.
+    @property
+    def xy_all(self):
+        return self.data.xy_all
+
+    @property
+    def all(self):
+        """Short for xy_all"""
+        return self.data.xy_all
+
+    #@property
+    #def xy_raw(self):
+    #    return self.data.xy_raw
+
+    #@property
+    #def raw(self):
+    #    """
+    #    Shortcut for xy_raw
+    #    """
+    #    return self.data.xy_raw
+
+    @property
+    def x(self):
+        return self.data.x
+
+    @property
+    def y_raw(self):
+        return self.data.y_raw
+
+    @property
+    def y(self):
+        """
+        Shortcut for `y_raw`.
+        """
+        return self.data.y_raw
+
+    @property
+    def y_bg(self):
+        return self.data.y_bg
+
+    @property
+    def y_raw_without_bg(self) -> pd.Series:
+        return self.data.y_raw_without_bg
+
+    @property
+    def y_fit(self):
+        return self.data.y_fit
+
+    #@property
+    #def xy_eles(self):
+    #    return self.data.xy_eles
+
+    @property
+    def y_eles(self):
+        return self.data.y_eles
+
+    @property
+    def columns(self):
+        return self.data.columns
+
+    @property
+    def columns_elements(self):
+        return self.data.columns_peaks
+
+    @property
+    def columns_peaks(self):
+        return self.data.columns_peaks
+
+    @property
+    def residual(self) -> pd.Series:
+        return self.data.residual
+    
+    @property
+    def rms(self):
+        """
+        Root mean squared errors.
+        """
+        return self.data.rms
+
+    def data_to_df(self):
+        return self.data.to_df()
+    
+    def has_bg(self):
+        return self.data.has_bg()
+
+    def save_data(self, path):
+        """
+        Wrapper for `pandas.DataFrame.to_csv` with `index=False`.
+        """
+        self.all.to_csv(path_or_buf=path, index=False)
+        return 
