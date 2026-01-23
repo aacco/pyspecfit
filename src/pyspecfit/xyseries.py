@@ -46,7 +46,8 @@ class xySeries:
     #    ID_Y_FIT,
     #]
 
-    # Define names of MultiIndex columns where the first level is "base".
+    # Define a minimum set of MultiIndex columns of xySeries, 
+    # where the first level is "base".
     INIT_MULTI_COLMN = [
         (ID_FIRST_BASE,     ID_SECOND_X    ),
         (ID_FIRST_BASE,     ID_SECOND_RAW  ),
@@ -54,7 +55,11 @@ class xySeries:
         (ID_FIRST_BASE,     ID_SECOND_FIT  ), 
     ]
 
-    INIT_COLS = pd.MultiIndex.from_tuples(INIT_MULTI_COLMN)
+    ID_FIRST = "first"
+    ID_SECOND = "second"
+    COLUMN_LEVELS = [ID_FIRST, ID_SECOND]
+
+    INIT_COLS = pd.MultiIndex.from_tuples(INIT_MULTI_COLMN, names=COLUMN_LEVELS)
 
 
     def __init__(
@@ -298,4 +303,6 @@ class xySeries:
         return self.raw - self.fit
     
     def has_bg(self):
-        return self.ID_Y_BG in self.columns
+        #print(f"Columns:\n{self.all.columns.get_level_values(0).isin(["bg"])}\n")
+        l = self.all.columns.get_level_values(0).isin([self.ID_FIRST_BG])
+        return l.any()

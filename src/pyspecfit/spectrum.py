@@ -137,11 +137,14 @@ class Spectrum:
         xrange      : tuple         | None = None,  # TODO
         fitparam    : pd.DataFrame  | None = None,
     ):
+        if fitparam is not None:
+            self.set_fitparam(fitparam)
         if self.fitparam is None:
             raise
 
         # "y_for_fit" must have no background component.
         if self.data.has_bg():
+            print("Has bg!")
             y_for_fit = self.data.y_raw_without_bg
         else:
             y_for_fit = self.data.y_raw

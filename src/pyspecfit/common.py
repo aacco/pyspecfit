@@ -287,7 +287,6 @@ def least_squares(
         bounds   = fitparam["boundaries"],  # Limit of fitting
         args     = fit_args,                # Arguments passed to residual functions 
         max_nfev = 1000,
-        x_scale='jac',
         #xtol=1e-8,
         #ftol=1e-8,
     )
