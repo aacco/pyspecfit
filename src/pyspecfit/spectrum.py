@@ -1,4 +1,5 @@
 from .xyseries import xySeries
+from .bgseries import bgSeries
 from . import common as cmn
 import pandas as pd
 import numpy as np
@@ -78,18 +79,22 @@ class Spectrum:
         return rtn
 
 
-    def _register_bg_results(self, df: pd.DataFrame, bg_type):
-        self.background_result  = df
+    def _register_bg_results(
+        self, 
+        bgser   : bgSeries, 
+        bg_name : str,
+    ):
+        self.background_result  = bgser
 
         # TODO: refactoring.
         # If returned value contains "x" attribute, update x-axis.
-        if "x" in df.columns:
-            self.data.update_x(df["x"])
+        #if bgser.has_new_x:
+        #    self.data.update_x(bgser.new_x)
 
-        if "y" in df.columns:
-            self.data.update_raw(df["y"])
+        #if bgser.has_new_y:
+        #    self.data.update_raw(bgser.new_y)
 
-        self.data.update_bg_element(ser=df["bg"], column_name=bg_type)
+        self.data.update_bg_element(ser=bgser.bg, column_name=bg_name)
         return
 
 
@@ -130,6 +135,27 @@ class Spectrum:
         self._register_bg_results(bg_result, bg_name)
 
         return bg_result
+    
+    # TODO
+    #def background_estimation(
+    #    self,
+    #    func        : callable     | list,
+    #    bg_name     : str          | list,
+    #    xy          : pd.DataFrame        | None = None,
+    #    args        = (),
+    #    kwargs      = {},
+    #):
+    #    """
+    #    Wrapper for `fit_background` method.
+    #    """
+    #    #return self.fit_background(
+    #    #    func    = func,
+    #    #    bg_name = bg_type,
+    #    #    xy      = xy,
+    #    #    args    = args,
+    #    #    kwargs  = kwargs,
+    #    #)
+    #    return # TODO
 
 
     def fit(

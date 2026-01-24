@@ -14,3 +14,7 @@ from .spectrum import (
 from .xyseries import (
     xySeries
 )
+
+from .bgseries import (
+    bgSeries
+)

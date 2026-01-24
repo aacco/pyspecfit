@@ -6,6 +6,7 @@ import scipy
 
 from . import common as cmn
 from . import model as mdl
+from .bgseries import bgSeries
 
 
 C1S_POS = 284.6
@@ -128,14 +129,15 @@ def linear_and_shirley(
 
     # CAUTION: avoid misaligned indices.
     y_bg_total = xy_baseline_clipped.y + xy_bg_shirley.y
-    df_rtn = pd.DataFrame(
-        {
-            "x": xy.x,
-            "y": xy.y,
-            "bg": y_bg_total,
-        }
-    )
-    return  df_rtn
+    #df_rtn = pd.DataFrame(
+    #    {
+    #        "x": xy.x,
+    #        "y": xy.y,
+    #        "bg": y_bg_total,
+    #    }
+    #)
+    rtn_series = bgSeries(bg=y_bg_total)
+    return  rtn_series
 
 def parse_null(val, mode: str):
         if val == None:
