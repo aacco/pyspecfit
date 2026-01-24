@@ -1,6 +1,8 @@
 import numpy as np
 import scipy
 
+def linear(x, a, b):
+    return a * x + b
 
 def voigt(x, params):
     """
