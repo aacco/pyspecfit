@@ -235,11 +235,11 @@ def series_fwhm(param: pd.DataFrame) -> pd.Series:
 
 def calc_area(x, y):
     #if is_descending(x=x):
-    #    area = -1 * np.trapz(y, x)
+    #    area = -1 * np.trapezoid(y, x)
     #else:
-    #    area = np.trapz(y, x)
+    #    area = np.trapezoid(y, x)
     #return area
-    return abs(np.trapz(y, x))
+    return abs(np.trapezoid(y, x))
 
 def series_area(
     xy      : pd.DataFrame | None = None,
