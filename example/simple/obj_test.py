@@ -2,7 +2,11 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import pyspecfit as sf
 
+<<<<<<< HEAD
 BASE_PATH = "./example/"
+=======
+BASE_PATH = "./example/simple/"
+>>>>>>> dev-refac
 
 # Data loading #
 df_raw      = pd.read_csv(BASE_PATH + "sampledata/sampledata.csv")

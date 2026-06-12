@@ -14,3 +14,15 @@ from .spectrum import (
 from .xyseries import (
     xySeries
 )
+
+from .bgseries import (
+    bgSeries
+)
+
+from . import background
+from . import common 
+from . import model
+from . import raman
+from . import smartlab
+from . import xps
+

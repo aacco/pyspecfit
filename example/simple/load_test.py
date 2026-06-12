@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import pyspecfit
 
-BASE_PATH = "./example/"
+BASE_PATH = "./example/simple/"
 
 # Data loading #
 test_peak = pyspecfit.Spectrum.load_csv(BASE_PATH + "log/xy.csv")

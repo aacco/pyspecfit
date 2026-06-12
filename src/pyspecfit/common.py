@@ -41,20 +41,29 @@ def is_descending(xy: pd.DataFrame | None = None, x: any = None):
     else:
         raise
 
+def x_to_index(x, x_ser: pd.Series | np.ndarray):
+    diff = (x_ser - x).abs()
+    return diff.idxmin()
+
 def xclip(xy: any, range: tuple, reset_index=True) -> pd.DataFrame:
     """
     Roughly clipping xy data by x-axis range.
     - xy    : pd.Dataframe like including "x" and "y" columns.
     - range : Tuple object as (begin, end).
     """
-    x = xy.x.to_numpy()
+    #x = xy.x.to_numpy()
+    x = xy.x
 
     if is_descending(xy):
-        i_x_min = np.where(x <= range[1])[0][0]
-        i_x_max = np.where(x <= range[0])[0][0]
+        #i_x_min = np.where(x <= range[1])[0][0]
+        #i_x_max = np.where(x <= range[0])[0][0]
+        i_x_min = x_to_index(range[1], x)
+        i_x_max = x_to_index(range[0], x)
     else:
-        i_x_min = np.where(x >= range[0])[0][0]
-        i_x_max = np.where(x >= range[1])[0][0]
+        #i_x_min = np.where(x >= range[0])[0][0]
+        #i_x_max = np.where(x >= range[1])[0][0]
+        i_x_min = x_to_index(range[0], x)
+        i_x_max = x_to_index(range[1], x)
 
     
     xy_rtn = xy.loc[ i_x_min : i_x_max ]
@@ -225,19 +234,31 @@ def series_fwhm(param: pd.DataFrame) -> pd.Series:
     return param.apply(lambda row: calc_fwhm(row['gamma'], row['sigma']), axis=1)
 
 def calc_area(x, y):
-    if is_descending(x=x):
-        area = -1 * np.trapz(y, x)
-    else:
-        area = np.trapz(y, x)
-    return area
+    #if is_descending(x=x):
+    #    area = -1 * np.trapezoid(y, x)
+    #else:
+    #    area = np.trapezoid(y, x)
+    #return area
+    return abs(np.trapezoid(y, x))
 
-def series_area(xy: pd.DataFrame) -> pd.Series:
+def series_area(
+    xy      : pd.DataFrame | None = None,
+    x       : pd.Series    | np.ndarray | None = None,
+    peaks   : pd.DataFrame | None = None,
+    ) -> pd.Series:
     area_list = []
-    for c_name, c_data in xy.items():
-        if c_name == "x":
-            continue
-        a = calc_area(xy["x"], c_data)
-        area_list.append(a)
+    if xy is not None:
+        for c_name, c_data in xy.items():
+            if c_name == "x":
+                continue
+            a = calc_area(xy["x"], c_data)
+            area_list.append(a)
+    
+    elif x is not None and peaks is not None:
+        for _, peak_ser in peaks.items():
+            a = calc_area(x, peak_ser)
+            area_list.append(a)
+
     return pd.Series(area_list)
 
 def least_squares(
@@ -258,13 +279,16 @@ def least_squares(
         xy.x.values,    # x *list* in fitting range (background subtracted).
         xy.y.values,    # y *list* in fitting range (background subtracted).
     )
+    #print(fitparam["boundaries"])
     result = scipy.optimize.least_squares(
         # Minimizing residual function
         residual,                          # Function of residuals
         fitparam["guesses"],               # Initial guessing value of fitting
-        bounds  = fitparam["boundaries"],  # Limit of fitting
-        args    = fit_args,                # Arguments passed to residual functions 
-        max_nfev= 10000
+        bounds   = fitparam["boundaries"],  # Limit of fitting
+        args     = fit_args,                # Arguments passed to residual functions 
+        max_nfev = 1000,
+        #xtol=1e-8,
+        #ftol=1e-8,
     )
     if not result.success:
         print("ERROR")
@@ -348,6 +372,7 @@ def build_fitmodel(peaktype_list: list) -> callable:
                 peak = mdl.doublet
             else:
                 print("ERROR")
+                raise
 
             y += peak(x, p)
         return y                    # Superposed y values.
