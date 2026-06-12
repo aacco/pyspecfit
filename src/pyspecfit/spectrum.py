@@ -79,11 +79,15 @@ class Spectrum:
         return rtn
 
 
-    def _register_bg_results(
+    def register_new_bg(
         self, 
-        bgser   : bgSeries, 
+        bg_data   : np.ndarray | pd.Series | bgSeries, 
         bg_name : str,
     ):
+        if type(bg_data) is not bgSeries:
+            bgser = bgSeries(bg_data)
+        else:
+            bgser = bg_data
         self.background_result  = bgser
 
         # TODO: refactoring.
@@ -114,7 +118,7 @@ class Spectrum:
             with the signature ``func(xy, *args, **kwargs)``.
             The return value of `func` must include a `bg` attribute
             as results.
-        
+
         xy : pandas.DataFrame, optional
             DataFrame of xy for background fitting. If None (default),
             the value is `self.data.xy_raw`.
@@ -132,7 +136,7 @@ class Spectrum:
         bg_result = func(xy_passed, *args, **kwargs)
 
         # Register background results #
-        self._register_bg_results(bg_result, bg_name)
+        self.register_new_bg(bg_result, bg_name)
 
         return bg_result
     
@@ -170,7 +174,7 @@ class Spectrum:
 
         # "y_for_fit" must have no background component.
         if self.data.has_bg():
-            print("Has bg!")
+            #print("Has bg!")
             y_for_fit = self.data.y_raw_without_bg
         else:
             y_for_fit = self.data.y_raw
@@ -192,7 +196,7 @@ class Spectrum:
 
         if self.optimize_result.success:
             print("Fitting succeeded.")
-            print(self.optimize_result)
+            #print(self.optimize_result)
 
         if not self.optimize_result.success:
             print("ERROR")
@@ -273,8 +277,8 @@ class Spectrum:
     def xclip(
         self,
         clip_range  : tuple, 
-        reset_index                       = True,
-        newfitparam : pd.DataFrame | None = None,
+        reset_index : bool                  = True,
+        newfitparam : pd.DataFrame | None   = None,
     ):
         """
         Roughly clipping xy data by x-axis range.
@@ -302,7 +306,7 @@ class Spectrum:
 
     def xshift(
         self,
-        shift      : float, # shift value
+        shift       : float, # shift value
     ):
         self.data.xshift(shift)
         return self

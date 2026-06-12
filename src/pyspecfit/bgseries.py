@@ -6,8 +6,8 @@ class bgSeries:
     Class for handling a background estimation result.
     An instance of "bgSeries" can have five properties: 
     bg, index, new_x, new_y and other.
-    The instance must have "bg" data, 
-    while "index", new_x", "new_y" and "other" are optional.
+    Instances of this class must have "bg" data, 
+    while "index"; new_x"; "new_y" and "other" are optional.
     The "other" property can be used for iterational background estimations
     which requires some values.
     """

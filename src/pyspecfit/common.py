@@ -372,6 +372,7 @@ def build_fitmodel(peaktype_list: list) -> callable:
                 peak = mdl.doublet
             else:
                 print("ERROR")
+                raise
 
             y += peak(x, p)
         return y                    # Superposed y values.

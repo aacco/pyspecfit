@@ -205,7 +205,7 @@ class xySeries:
         """Short for self.bg"""
         return self.y_bg
 
-    def update_bg(
+    def update_bg_total(
         self, 
         ser: pd.Series | None = None,
     ):
@@ -213,19 +213,24 @@ class xySeries:
             self.all[self.ID_FIRST_BASE, self.ID_SECOND_BG] = ser
 
         elif self.has_bg_elements():
-            s = self.all[self.ID_FIRST_BG].sum(axis=1, skipna=False)  # Sum of all columns in BG level
-            self.all[self.ID_FIRST_BASE, self.ID_SECOND_BG] = s
+            # IF self has bg elements, 
+            # update the bg column as a sum of all columns in BG level.
+            sum = self.all[self.ID_FIRST_BG].sum(axis=1, skipna=False)
+            self.all[self.ID_FIRST_BASE, self.ID_SECOND_BG] = sum
         
         else:
             raise
 
         return
 
+    def update_bg(self, ser: pd.Series | None = None):
+        return self.update_bg_total(ser=ser)
+
     def update_y_bg(
         self, 
         ser: pd.Series | None = None,
     ):
-        return self.update_bg(ser)  # Wrapper for backward compatibility
+        return self.update_bg(ser=ser)  # Wrapper for backward compatibility
     
     def has_bg_elements(self) -> bool:
         flag_list = self.all.columns.isin({self.ID_FIRST_BG}, level=0)
@@ -236,9 +241,9 @@ class xySeries:
         ser: pd.Series | np.ndarray, 
         column_name
     ):
-        # update or create a new column of bg.
+        """update or create a new column of bg."""
         self.all[self.ID_FIRST_BG, column_name] = ser
-        self.update_bg()
+        self.update_bg_total(ser=None)
         return
 
     @property
