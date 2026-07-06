@@ -188,10 +188,6 @@ class Spectrum:
     ):
         if fitparam is not None:
             self.set_fitparam(fitparam)
-<<<<<<< HEAD
-
-=======
->>>>>>> dev-refac
         if self.fitparam is None:
             raise
 
@@ -245,9 +241,6 @@ class Spectrum:
             x           = self.data.x.to_numpy(), 
             args        = self.optimize_result.x
         )
-<<<<<<< HEAD
-        self.data.update_y_fit(y_fit_wo_bg + self.y_bg)
-=======
 
         #
         # Update y_fit including background component.
@@ -255,7 +248,6 @@ class Spectrum:
         # because sum of any value and NaN will be NaN.
         #
         self.data.update_y_fit(y_fit_wo_bg + self.data.y_bg)
->>>>>>> dev-refac
 
         xy_eles = cmn.build_peak_elements(
             x           = self.data.x.values, 
@@ -345,10 +337,6 @@ class Spectrum:
         Loading a csv file of xy_all data (already-fitted and exported).
         """
         return cls(xy=None, fitparam=None, loadpath=path)
-<<<<<<< HEAD
-    
-=======
->>>>>>> dev-refac
 
     # Bypass for self.data properties.
     @property
@@ -360,18 +348,6 @@ class Spectrum:
         """Short for xy_all"""
         return self.data.xy_all
 
-<<<<<<< HEAD
-    @property
-    def xy_raw(self):
-        return self.data.xy_raw
-
-    @property
-    def raw(self):
-        """
-        Shortcut for xy_raw
-        """
-        return self.data.xy_raw
-=======
     #@property
     #def xy_raw(self):
     #    return self.data.xy_raw
@@ -382,7 +358,6 @@ class Spectrum:
     #    Shortcut for xy_raw
     #    """
     #    return self.data.xy_raw
->>>>>>> dev-refac
 
     @property
     def x(self):
@@ -411,15 +386,9 @@ class Spectrum:
     def y_fit(self):
         return self.data.y_fit
 
-<<<<<<< HEAD
-    @property
-    def xy_eles(self):
-        return self.data.xy_eles
-=======
     #@property
     #def xy_eles(self):
     #    return self.data.xy_eles
->>>>>>> dev-refac
 
     @property
     def y_eles(self):
@@ -431,15 +400,11 @@ class Spectrum:
 
     @property
     def columns_elements(self):
-<<<<<<< HEAD
-        return self.data.columns_elements
-=======
         return self.data.columns_peaks
 
     @property
     def columns_peaks(self):
         return self.data.columns_peaks
->>>>>>> dev-refac
 
     @property
     def residual(self) -> pd.Series:
@@ -450,21 +415,14 @@ class Spectrum:
         """
         Root mean squared errors.
         """
-<<<<<<< HEAD
-        return self.data.rms
-=======
         r = self.data.residual
         rms = np.sqrt( ( r**2 ).mean() )
         return np.round(rms, 4)
->>>>>>> dev-refac
 
     def data_to_df(self):
         return self.data.to_df()
     
     def has_bg(self):
-<<<<<<< HEAD
-        return self.data.has_bg()
-=======
         return self.data.has_bg()
 
     def save_data(self, path):
@@ -473,4 +431,3 @@ class Spectrum:
         """
         self.all.to_csv(path_or_buf=path, index=False)
         return 
->>>>>>> dev-refac
