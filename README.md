@@ -1,130 +1,307 @@
 # pyspecfit
-Module for peak fitting in Python.
 
-This utility module serves `Spectrum` class for easier hadling spectrum data in 
-fitting curves.Voigt profiles (singlet) or doublet are only supported for this 
-module.
+> A lightweight Python package for reproducible peak fitting of spectroscopic data.
 
-# Install
-For development use, download and execute 
-```shell
+`pyspecfit` is a Python package for analyzing spectroscopic data such as X-ray Photoelectron Spectroscopy (XPS) and Raman spectroscopy. It provides a reproducible, object-oriented workflow for spectrum handling, background registration, peak fitting, visualization, and result export.
+
+Unlike many peak fitting scripts, **background estimation is intentionally decoupled from the fitting engine**, allowing users to integrate any baseline estimation algorithm while keeping the fitting workflow unchanged.
+
+<p align="center">
+<img src="example/simple/simple.png" width="700">
+</p>
+
+---
+
+# Features
+
+- 📈 Voigt singlet and doublet peak models
+- 📊 Constrained nonlinear least-squares fitting
+- 🧩 Flexible background registration from external algorithms
+- 📁 CSV-based fitting parameter management
+- 🎨 Automatic peak decomposition and visualization
+- 💾 Export of fitted spectra and optimized parameters
+- 🐍 Simple, object-oriented Python API
+
+---
+
+# Installation
+
+Clone the repository and install it in editable mode.
+
+```bash
+git clone https://github.com/aacco/pyspecfit.git
+cd pyspecfit
 pip install -e .
 ```
-in the same directory as `setup.py`.
 
-# Usage
-## Flow
-1. Create `Spectrum` object by registering raw data and fitting conditions.
-2. (Optional) Estimate background of spectrum.
-3. Fit with parameters.
-4. Plot with accessors.
-5. Save the results and load it.
+## Requirements
 
-See also `example/` for more demonstration code.
+Core dependencies
 
+- numpy
+- scipy
+- pandas
+- matplotlib
 
-## 1. Create `Specturm` object
-The minimum example code crating object with raw data `df_raw` and fit parameters 
-`df_fitparam`:
+Optional
+
+- pybaselines (recommended for baseline estimation)
+
+---
+
+# Quick Start
+
 ```python
 import pandas as pd
-import pyspecfit
+import matplotlib.pyplot as plt
+import pybaselines
+import pyspecfit as psf
 
-df_raw      = pd.read_csv("./example/sampledata/sampledata.csv")
-df_fitparam = pd.read_csv("./example/fitparam.csv")
+# Load spectrum
+df_raw = pd.read_csv("sampledata/sampledata.csv")
+df_fitparam = pd.read_csv("fitparam.csv")
 
-# Create Spectrum instance 
-test_peak = pyspecfit.Spectrum(xy=df_raw, fitparam=df_fitparam)
-```
-NOTICE:
-
-The raw data `df_raw` must have at least two columns named `x` and `y` (or `y_raw`).
-The fitting parameters `df_fitparam` must incluede following columns: peak_name, 
-display_name, is_used, peak_type, bg_start, bd_end, fit_start, fit_end, 
-position_guess, position_limit_lower, position_limit_upper, position_hold, 
-gamma_guess, gamma_limit_lower, gamma_limit_upper, gamma_hold, sigma_guess, 
-sigma_limit_lower, sigma_limit_upper, sigma_hold, norm_guess, norm_limit_lower, 
-norm_limit_upper, and norm_hold.
-
-
-## 2. (Optional) Estimate background of spectrum
-You can estimate backgrounds with `.fit_background()` by specifying estimaiton 
-function via `func` argument, and a `kwargs` argument is additional arguments to 
-the background estimating function, for example: 
-```python
-test_peak.fit_background(
-    func=xps.linear_and_shirley,
-    kwargs={
-        "range_linear"  : (286, 297),
-        "range_shirley" : (278, 290),
-    }
+# Create Spectrum object
+sp = psf.Spectrum(
+    xy=df_raw,
+    fitparam=df_fitparam,
 )
-```
 
-The function passed for `func` argument must must have `xy` argument and return 
-`pandas.DataFrame` at least including a column named `y_bg`.
+# Estimate background
+baseline = pybaselines.Baseline(
+    x_data=sp.data.x
+)
 
+bg, _ = baseline.beads(
+    sp.data.y_raw,
+    freq_cutoff=1e-4,
+)
 
-## 3. Fit with parameters
-Conduct `.fit()` method to fit and results are stored in `test_peak` object 
-when the fitting succeeds.
-```python
-# Compute fitting 
-test_peak.fit()
+sp.register_new_bg(
+    bg,
+    "pybaselines_beads",
+)
 
-# Print fitting results
-test_peak.print_resultparam()
-```
+# Peak fitting
+sp.fit()
 
+# Print optimized parameters
+sp.print_resultparam()
 
-## 4. Plot with accessors
-After fitting, we can access plotting data with `.x`, `.y_raw` and `.y_fit` accesser 
-as `pandas.Series`:
-```python
-import matplotlib as plt
-
-# Plotting #
+# Plot results
 fig, ax = plt.subplots()
-ax.plot(test_peak.x, test_peak.y_raw)
-ax.plot(test_peak.x, test_peak.y_fit)
+
+ax.plot(sp.data.x, sp.data.y_raw, label="Raw")
+ax.plot(sp.data.x, sp.data.y_bg, label="Background")
+ax.plot(sp.data.x, sp.data.y_fit, label="Fit")
+
+for name, peak in sp.data.y_eles.items():
+    ax.fill_between(
+        sp.data.x,
+        peak,
+        alpha=0.3,
+        label=name,
+    )
+
+ax.legend()
+
 plt.show()
 ```
 
-If some peaks are fitted at the same time, we can access each elemental peak by using 
-`.y_eles` accessor:
-```python
-# Plot all elements of peaks
-for col_name in test_peak.y_eles:
-    ax.plot(test_peak.x, test_peak.y_eles[col_name])
-```
-`.y_eles` returns `pandas.DataFrame` which consists of y-axis data of each peak in 
-columns.
+---
 
+# Workflow
 
-## 5. Save the results and load it
-To save fitting data, use `to_csv` method of `pandas.DataFrame`:
-```python
-# Saving fit results #
-test_peak.xy_all.to_csv("xy.csv", index=False)
-test_peak.resultparam.to_csv("resultparam.csv", index=False)
-```
+The typical workflow consists of four steps.
 
-If data were saved as csv file, `Spectrum` class can load the fitted data:
-```python
-test_peak = pyspecfit.Spectrum.load_csv("xy.csv")
+```text
+Raw spectrum
+      │
+      ▼
+Create Spectrum
+      │
+      ▼
+Register background
+      │
+      ▼
+Peak fitting
+      │
+      ▼
+Visualization / Export
 ```
 
-These component accessors are shortcuts for `.data`, for example `.x` is a shortened 
-expression of `.data.x`.
+---
 
+# Core Concepts
 
-# Dependencies
- - [Numpy](https://www.numpy.org/)
- - [pandas](https://pandas.pydata.org/)
- - [SciPy](https://scipy.org/)
- - [Matplotlib](https://matplotlib.org/)
+## Spectrum
 
+`Spectrum` represents **an entire spectrum analysis session**.
+
+It manages
+
+- spectral data
+- fitting parameters
+- registered backgrounds
+- optimization
+- fitting results
+
+A single `Spectrum` object contains everything required to reproduce an analysis.
+
+```python
+sp.fit()
+```
+
+updates
+
+- optimized parameters
+- fitted spectrum
+- individual peak components
+- fitting statistics
+
+without requiring users to manually synchronize intermediate results.
+
+---
+
+## xySeries
+
+Numerical data are stored in the `xySeries` object (`Spectrum.data`).
+
+Rather than storing each array separately, `xySeries` organizes the complete analysis into a single MultiIndex `pandas.DataFrame`.
+
+Conceptually,
+
+```text
+base
+ ├── x
+ ├── y_raw
+ ├── y_bg
+ └── y_fit
+
+bg
+ ├── pybaselines_beads
+ └── ...
+
+peak
+ ├── Peak1
+ ├── Peak2
+ └── ...
+```
+
+This structure makes it straightforward to
+
+- export the complete analysis,
+- compare multiple backgrounds,
+- visualize peak components,
+- automate post-processing.
+
+---
+
+# Background Registration
+
+`pyspecfit` intentionally **does not implement a dedicated baseline estimation algorithm**.
+
+Instead, backgrounds generated by external packages can be registered through
+
+```python
+sp.register_new_bg(
+    background,
+    "background_name",
+)
+```
+
+This allows seamless integration with
+
+- pybaselines
+- custom algorithms
+- laboratory-specific workflows
+
+without modifying the fitting engine.
+
+---
+
+# Accessing Results
+
+Processed spectra are available through `Spectrum.data`.
+
+| Property | Description |
+|----------|-------------|
+| `data.x` | x-axis |
+| `data.y_raw` | Raw spectrum |
+| `data.y_bg` | Total background |
+| `data.y_fit` | Fitted spectrum |
+| `data.y_eles` | Individual peak components |
+| `data.xy_all` | Complete processed dataset |
+
+Optimized fitting parameters are available through
+
+```python
+sp.resultparam
+```
+
+---
+
+# Saving Results
+
+```python
+sp.data.xy_all.to_csv(
+    "xy.csv",
+    index=False,
+)
+
+sp.resultparam.to_csv(
+    "resultparam.csv",
+    index=False,
+)
+```
+
+---
+
+# Documentation
+
+More detailed documentation is available in the `docs` directory.
+
+- **Design** (`docs/design.md`)
+  - Class architecture
+  - Design philosophy
+  - Workflow
+
+- **API Reference** (`docs/api.md`)
+  - `Spectrum`
+  - `xySeries`
+  - Public methods
+
+- **Background Estimation** (`docs/background.md`)
+  - Background registration
+  - Recommended workflows
+  - Integration examples
+
+- **Fitting Parameters** (`docs/fitparam.md`)
+  - CSV format
+  - Peak models
+  - Parameter constraints
+
+---
+
+# Examples
+
+Example scripts are available in
+
+```text
+example/simple/
+```
+
+The example demonstrates
+
+- loading spectral data,
+- creating a `Spectrum`,
+- estimating backgrounds using `pybaselines`,
+- performing peak fitting,
+- plotting results,
+- exporting fitted spectra.
+
+---
 
 # License
-[MIT license](https://github.com/aacco/pyspecfit/blob/main/LICENSE)
 
+This project is distributed under the MIT License.
