@@ -179,7 +179,7 @@ class xySeries:
 
     @property
     def raw(self) -> pd.Series:
-        """Short for self.raw"""
+        """Short for self.y_raw"""
         return self.y_raw
 
     #@property
@@ -200,7 +200,7 @@ class xySeries:
 
     @property
     def bg(self):
-        """Short for self.bg"""
+        """Short for self.y_bg"""
         return self.y_bg
 
     def update_bg_total(
