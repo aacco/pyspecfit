@@ -51,6 +51,23 @@ Optional
 
 # Quick Start
 
+Example scripts are available in
+
+```text
+example/simple/
+```
+
+The example demonstrates
+
+- loading spectral data,
+- creating a `Spectrum`,
+- estimating backgrounds using `pybaselines`,
+- performing peak fitting,
+- plotting results,
+- exporting fitted spectra.
+
+## Fitting
+
 ```python
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -98,13 +115,58 @@ ax.plot(sp.data.x, sp.data.y_fit, label="Fit")
 for name, peak in sp.data.y_eles.items():
     ax.fill_between(
         sp.data.x,
-        peak,
+        peak + sp.data.y_bg,
+        sp.data.y_bg,
         alpha=0.3,
         label=name,
     )
 
 ax.legend()
 
+plt.show()
+```
+
+## Saving and Loading Results
+
+The complete processed spectrum can be saved as a CSV file.
+
+```python
+sp.save_data("xy.csv")
+
+sp.resultparam.to_csv(
+    "resultparam.csv",
+    index=False,
+)
+```
+
+The saved spectrum can later be restored as a new `Spectrum` object.
+
+```python
+import pyspecfit as psf
+
+sp = psf.Spectrum.load_csv("xy.csv")
+```
+
+The loaded object provides the same data interface as a newly fitted spectrum.
+
+```python
+print(sp.data.xy_all)
+
+fig, ax = plt.subplots()
+
+ax.plot(sp.data.x, sp.data.y_raw, label="Raw")
+ax.plot(sp.data.x, sp.data.y_bg, label="Background")
+ax.plot(sp.data.x, sp.data.y_fit, label="Fit")
+
+for name, peak in sp.data.y_eles.items():
+    ax.fill_between(
+        sp.data.x,
+        peak,
+        alpha=0.3,
+        label=name,
+    )
+
+ax.legend()
 plt.show()
 ```
 
@@ -280,25 +342,6 @@ More detailed documentation is available in the `docs` directory.
   - CSV format
   - Peak models
   - Parameter constraints
-
----
-
-# Examples
-
-Example scripts are available in
-
-```text
-example/simple/
-```
-
-The example demonstrates
-
-- loading spectral data,
-- creating a `Spectrum`,
-- estimating backgrounds using `pybaselines`,
-- performing peak fitting,
-- plotting results,
-- exporting fitted spectra.
 
 ---
 
