@@ -1,0 +1,2 @@
+﻿peak_name,display_name,is_used,peak_type,bg_start,bg_end,fit_start,fit_end,position_guess,position_limit_lower,position_limit_upper,position_hold,gamma_guess,gamma_limit_lower,gamma_limit_upper,gamma_hold,sigma_guess,sigma_limit_lower,sigma_limit_upper,sigma_hold,norm_guess,norm_limit_lower,norm_limit_upper,norm_hold
+D,D,TRUE,singlet,150,500,150,500,360,350,370,FALSE,5,0.00001,10,FALSE,6,0,10,FALSE,100,0.00001,FALSE,FALSE

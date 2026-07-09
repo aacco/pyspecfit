@@ -319,6 +319,85 @@ sp.resultparam.to_csv(
 
 ---
 
+## Pipeline Example
+
+`pyspecfit` is designed to support complete spectral analysis workflows, from preprocessing to peak fitting. Individual processing steps can be combined into a concise and reproducible pipeline.
+
+### Workflow
+
+```text
+Raw spectrum
+      │
+      ▼
+Baseline estimation (BEADS)
+      │
+      ▼
+Reference peak fitting
+      │
+      ▼
+Wavenumber calibration
+      │
+      ▼
+Target peak fitting
+      │
+      ▼
+Peak parameters
+```
+
+### Example
+
+```python
+import pandas as pd
+import pybaselines
+import pyspecfit as psf
+
+# Load spectrum
+df = pd.read_csv("sampledata.csv")
+spec = psf.Spectrum(xy=df)
+
+# Baseline estimation
+baseline, _ = pybaselines.Baseline(
+    x_data=spec.data.x
+).beads(spec.data.y_raw)
+
+spec.register_new_bg(baseline, "BEADS")
+
+# Fit reference peak
+spec_ref = spec.xclip(
+    clip_range=(320, 400),
+    newfitparam=pd.read_csv("pipeline_fitparam_1.csv"),
+)
+
+spec_ref.fit()
+
+# Correct the x-axis using the fitted reference peak
+spec.xshift(360 - spec_ref.resultparam.position.iloc[0])
+
+# Fit the target spectral region
+spec_target = spec.xclip(
+    clip_range=(50, 120),
+    newfitparam=pd.read_csv("pipeline_fitparam_2.csv"),
+)
+
+spec_target.fit()
+```
+
+### Result
+
+The following figure illustrates each step of the pipeline.
+
+<p align="center">
+<img src="example/pipeline/log/pipeline_fit.png" width="750">
+</p>
+
+From left to right:
+
+1. Baseline estimation using the BEADS algorithm.
+2. Fitting of the reference peak for calibration.
+3. Peak fitting of the target region after spectral alignment.
+
+This pipeline demonstrates how preprocessing, calibration, and fitting can be seamlessly integrated while keeping the analysis workflow concise and reproducible.
+
 # Documentation
 
 More detailed documentation is available in the `docs` directory.

@@ -20,7 +20,7 @@ baseline = pybaselines.Baseline(
 
 bg, _ = baseline.beads(
     sp.data.y_raw,
-    freq_cutoff=1e-4,
+    freq_cutoff=8e-5,
 )
 
 sp.register_new_bg(
